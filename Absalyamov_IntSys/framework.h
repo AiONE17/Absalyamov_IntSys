@@ -21,3 +21,14 @@
 #endif // _AFX_NO_AFXCMN_SUPPORT
 
 #include <iostream>
+#include <afxsock.h>
+#include <afxmt.h>
+
+#include <thread>
+#include <queue>
+#include <memory>
+#include <map>
+#include <sstream>
+#include <ctime>
+#include <ratio>
+#include <chrono>

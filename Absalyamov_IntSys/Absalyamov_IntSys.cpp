@@ -8,6 +8,8 @@
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
+#include "Message.h"
+#include "session.h"
 
 
 // Единственный объект приложения
@@ -15,6 +17,29 @@
 CWinApp theApp;
 
 using namespace std;
+
+int maxID = MR_USER;
+map<int, shared_ptr<Session>> sessions;
+CCriticalSection cs;
+
+void LaunchClient()
+{
+    STARTUPINFO si = { sizeof(si) };
+    PROCESS_INFORMATION pi;
+    CreateProcess(NULL, (LPSTR)"Absalyamov_IntSys_Client.exe", NULL, NULL, TRUE, CREATE_NEW_CONSOLE, NULL, NULL, &si, &pi);
+    CloseHandle(pi.hThread);
+    CloseHandle(pi.hProcess);
+}
+
+string GetActiveUsers()
+{
+    string NamesAndIds = "";
+    for (auto& session : sessions)
+    {
+        NamesAndIds = NamesAndIds + to_string(session.second->id) + " " + session.second->GetName() + " ";
+    }
+    return NamesAndIds;
+}
 
 int main()
 {
