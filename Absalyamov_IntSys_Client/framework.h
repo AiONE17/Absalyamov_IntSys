@@ -21,3 +21,14 @@
 #endif // _AFX_NO_AFXCMN_SUPPORT
 
 #include <iostream>
+#include <atlcom.h>
+#include <afxsock.h>
+#include <afxmt.h>
+#include <thread>
+#include <string>
+#include <sstream>
+#include <memory>7
+#include <map>
+#include <fstream>
+#include <stdio.h>
+using namespace std;

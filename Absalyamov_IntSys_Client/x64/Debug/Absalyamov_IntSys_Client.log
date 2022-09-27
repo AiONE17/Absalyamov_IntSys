@@ -1,3 +1,4 @@
 ﻿  pch.cpp
+C:\Users\vanya\Documents\IntSys\Absalyamov_IntSys\Absalyamov_IntSys_Client\framework.h(30,10): warning C4067: непредвиденные лексемы за директивой препроцессора, требуется newline
   Absalyamov_IntSys_Client.cpp
   Absalyamov_IntSys_Client.vcxproj -> C:\Users\vanya\Documents\IntSys\Absalyamov_IntSys\x64\Debug\Absalyamov_IntSys_Client.exe
