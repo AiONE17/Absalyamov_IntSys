@@ -164,7 +164,7 @@ void Server()
     Server.Create(17);
     printf("Сервер запущен.Ура. Начинаем хайпить.\n");
 
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < 2; i++)
         RunClient();
 
     while (true)

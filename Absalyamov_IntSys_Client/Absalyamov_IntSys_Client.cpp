@@ -18,7 +18,7 @@ string username = "";
 void HistoryWrite(string str, string& uname)
 {
     cs.Lock();
-    ofstream hist("history" + uname + ".txt", ios::app);
+    ofstream hist("history" + uname + ".dat", ios::app);
     if (hist.is_open())
     {
         hist << str << endl;;
@@ -26,16 +26,17 @@ void HistoryWrite(string str, string& uname)
     }
     cs.Unlock();
 }
+
 void HistoryRead(string& uname)
 {
     string line;
     cs.Lock();
-    ifstream hist("history" + uname + ".txt", ios::out);
+    ifstream hist("history" + uname + ".dat", ios::out);
     if (hist.is_open())
     {
         while (getline(hist, line))
         {
-            cout << line << '\n';
+            cout << line << endl;
         }
         hist.close();
     }
@@ -44,7 +45,7 @@ void HistoryRead(string& uname)
 
 void PrintActiveUsers()
 {
-    cout << "__________________________________________\nОнлайн :" << endl;
+    cout << "__________________________________________\nActive Users :" << endl;
     for (auto& user : ActiveUsers)
     {
         cout << user.second << "(" << user.first << "); ";
@@ -72,12 +73,26 @@ int CheckCommands(string& str)
 {
     if (str == "/Помогите")
         return 3;
-    else if (str == "/Выходим")
+    if (str == "/Выйти")
         return 1;
-    else if (str == "/Сообщение") //str ==  "/whisper"
+    auto pos = str.find("/Сообщение");
+    if (pos != str.npos)
+    {
+        str = str.erase(pos, size("/Сообщение"));
+        for (auto user : ActiveUsers)
+        {
+            pos = str.find(user.second);
+            if (pos != str.npos)
+            {
+                str = str.erase(pos, user.second.length() + 1);
+                return user.first;
+            }
+        }
         return 2;
-    else
-        return 0;
+    }
+    if (str == "/reconect")
+        return 4;
+    return 0;
 }
 
 void ProcessMessages()
@@ -87,7 +102,12 @@ void ProcessMessages()
     {
         Message m = Message::Send(MR_BROKER, MT_REFRESH, to_string(ActiveUsers.size()));
         if (m.GetAction() != MT_DECLINE)
+        {
             RefreshActiveUsers(m.GetData());
+            cout << string(100, '\n') << endl;
+            HistoryRead(username);
+            PrintActiveUsers();
+        }
         m = Message::Send(MR_BROKER, MT_GETDATA);
         switch (m.GetAction())
         {
@@ -100,7 +120,7 @@ void ProcessMessages()
             break;
         }
         case MT_EXIT:
-            cout << "Вы былм отключены от сервера" << endl;
+            cout << "Вы были отключены" << endl;
             m = Message::Send(MR_BROKER, MT_EXIT);
             ExitFlag = false;
         default:
@@ -108,49 +128,42 @@ void ProcessMessages()
             break;
         }
     }
-    cout << "Please reconect" << endl;
+    cout << "Пожалуйста перезайдите" << endl;
 }
 
-void Client()
+int Client()
 {
     AfxSocketInit();
 
     while (true)
     {
-        cout << "Введите ваше имя, пожалуйста ^_^ ;D :3" << endl;
+        cout << "Введите имя" << endl;
         cin >> username;
-
-        ofstream hist("history" + username + ".txt", ios::trunc);
-        if (hist.is_open())
-        {
-            hist << "";
-            hist.close();
-        }
         Message m = Message::Send(MR_BROKER, MT_INIT, username);
         if (m.GetAction() == MT_DECLINE)
         {
-            cout << "К сожалению, человек с таким именем уже есть :(" << endl;
+            cout << "Недоступное имя" << endl;
         }
         else
         {
-            HistoryWrite("Что-то потустороннее: Привет)))))))))) " + username, username);
+            HistoryWrite("Сервер: Привет " + username, username);
             cout << string(100, '\n') << endl;
             RefreshActiveUsers(m.GetData());
             HistoryRead(username);
             PrintActiveUsers();
-            cout << "Добро пожаловать, " << username << endl;
             break;
         }
     }
-
+    cin.ignore();
     thread t(ProcessMessages);
     t.detach();
 
-    bool ExitFlag = true;
-    while (ExitFlag)
+    while (true)
     {
         string str;
-        cin >> str;
+        cin.clear();
+        getline(cin, str);
+        //cout << str << "-1" << endl;
         int com = CheckCommands(str);
         switch (com)
         {
@@ -166,30 +179,27 @@ void Client()
         case 1:
         {
             Message::Send(MR_BROKER, MT_EXIT);
-            ExitFlag = false;
+            return 0;
             break;
         }
         case 2:
         {
-            cout << "Введите id человека, которому вы хотите написать сообщение: ";
-            cin >> str;
-            auto user = ActiveUsers.find(stoi(str));
-            if (user != ActiveUsers.end())
-            {
-                cout << "Text: " << endl;
-                cin.ignore();
-                getline(cin, str);
-                HistoryWrite("Вы написали человеку с именем " + user->second + ": " + str, username);
-                Message::Send(user->first, MT_DATA, str);
-                cout << string(100, '\n') << endl;
-                HistoryRead(username);
-                PrintActiveUsers();
-            }
+            HistoryWrite("Вы написали " + to_string(com) + ": " + str, username);
+            Message::Send(com, MT_DATA, ("(private) ") + str);
+            cout << string(100, '\n') << endl;
+            HistoryRead(username);
+            PrintActiveUsers();
             break;
         }
         case 3:
         {
-            cout << "/Выйти - чтобы выйти.\n /Помогите - чтобы вам помогли\n /Сообщение - чтобы отправить личное сообщение\n" << endl;
+            cout << "/Выйти, /Помогите, /Сообщение" << endl;
+            break;
+        }
+        case 4:
+        {
+            Message::Send(MR_BROKER, MT_EXIT);
+            return 1;
             break;
         }
         default:
@@ -225,11 +235,14 @@ int main()
         }
         else
         {
-            Client();
-            if (remove(("history" + username + ".txt").c_str()) != 0)
-                perror("Ошибка удаления файла");
+            int ExitCode = 1;
+            while (ExitCode != 0)
+                ExitCode = Client();
+            if (remove(("history" + username + ".dat").c_str()) != 0)
+                perror("Ошибка удаления");
             else
                 puts("Файл успешно удален");
+            // TODO: вставьте сюда код для приложения.
         }
     }
     else
