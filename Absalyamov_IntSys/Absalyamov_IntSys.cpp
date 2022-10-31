@@ -42,7 +42,7 @@ string GetActiveUsers()
 }
 void InactiveChecking()
 {
-    int timespan = 60000;
+    int timespan = 600000;
     while (true)
     {
         if (sessions.size() > 0)
@@ -105,6 +105,7 @@ void ClProcessing(SOCKET hSock)
     {
         sessions.erase(m.GetFrom());
         Message::Send(s, m.GetFrom(), MR_BROKER, MT_CONFIRM);
+        cs.Lock();
         break;
     }
     case MT_GETDATA:
@@ -164,9 +165,6 @@ void Server()
     Server.Create(17);
     printf("Сервер запущен.Ура. Начинаем хайпить.\n");
 
-    for (int i = 0; i < 2; i++)
-        RunClient();
-
     while (true)
     {
         if (!Server.Listen())
@@ -179,7 +177,7 @@ void Server()
         t.detach();
     }
     Server.Close();
-    printf("Server stoped");
+    printf("Сервер остановлен");
 }
 
 int main()

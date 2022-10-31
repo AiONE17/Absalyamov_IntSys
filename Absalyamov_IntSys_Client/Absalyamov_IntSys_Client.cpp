@@ -184,16 +184,12 @@ int Client()
         }
         case 2:
         {
-            HistoryWrite("Вы написали " + to_string(com) + ": " + str, username);
-            Message::Send(com, MT_DATA, ("(private) ") + str);
-            cout << string(100, '\n') << endl;
-            HistoryRead(username);
-            PrintActiveUsers();
+            cout << "Ошибка" << endl;;
             break;
         }
         case 3:
         {
-            cout << "/Выйти, /Помогите, /Сообщение" << endl;
+            cout << "/ Выйти, / Помогите, / Сообщение" << endl;
             break;
         }
         case 4:
@@ -204,6 +200,11 @@ int Client()
         }
         default:
         {
+            HistoryWrite("Вы написали " + to_string(com) + ": " + str, username);
+            Message::Send(com, MT_DATA, ("(private) ") + str);
+            cout << string(100, '\n') << endl;
+            HistoryRead(username);
+            PrintActiveUsers();
             break;
         }
         }
